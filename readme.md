@@ -10,7 +10,7 @@
 
 *🤖 "Automate tasks. Speak. Listen. Create. All in one — with FALCON."*
 
-[📺 YouTube Demo](#) • [🐛 Report Bug](../../issues) • [💡 Request Feature](../../issues)
+[📺 YouTube Demo](https://youtu.be/PmVk83lAZpE) • [🐛 Report Bug](../../issues) • [💡 Request Feature](../../issues)
 
 </div>
 
