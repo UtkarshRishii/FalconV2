@@ -1,12 +1,30 @@
-openai
-python-dotenv
-google-generativeai
-pollinations
-Pillow
-speechrecognition
-pygame
-eel
-pandas
+# AI & Machine Learning APIs
+openai              # For interacting with OpenAI and Groq APIs
+python-dotenv       # For managing environment variables (.env file)
+google-generativeai # For Google's Gemini API
+groq                # Client for the Groq API
+
+# System Automation & Desktop Control
+pywhatkit           # For web automation tasks like YouTube and Google searches
+psutil              # For system monitoring and process management (e.g., closing apps)
+pyautogui           # For GUI automation (though not explicitly used in the final code, it's mentioned as an available module)
+
+# Text-to-Speech (TTS) & Audio
+pygame              # Used for playing the generated TTS audio files
+edge-tts            # Microsoft Edge's free and high-quality text-to-speech service
+
+# Image Generation
+pollinations        # API wrapper for image generation models
+Pillow              # For handling image files (e.g., opening, showing)
+
+# Speech Recognition
+SpeechRecognition   # For converting speech from the microphone into text
+PyAudio             # A dependency for SpeechRecognition to access the microphone (often needs to be installed)
+
+# Data Handling
+pandas              # For data manipulation, used in the database/memory section
+
+# Web User Interface
+eel                 # For creating the HTML/JavaScript desktop GUI for the application
+flask
 requests
-sounddevice
-numpy
