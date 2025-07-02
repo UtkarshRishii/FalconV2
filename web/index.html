@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FALCON Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-deep-space: #030613;
+            --primary-glow: #00aaff;
+            --secondary-glow: #aa00ff;
+            --text-primary: #e0e6f0;
+            --text-secondary: #808a9a;
+            --border-subtle: rgba(0, 170, 255, 0.2);
+            --gradient-main: radial-gradient(ellipse at center, rgba(0,170,255,0.15) 0%, transparent 70%);
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-deep-space);
+            color: var(--text-primary);
+            margin: 0; padding: 0;
+            height: 100vh; width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            background-image: var(--gradient-main);
+            background-repeat: no-repeat;
+        }
+
+        /* --- ENHANCED Conversation Area --- */
+        #conversation-container {
+            width: 100%; max-width: 800px;
+            height: calc(100vh - 320px);
+            overflow-y: auto; padding: 2rem;
+            display: flex; flex-direction: column; gap: 1.5rem;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+            scrollbar-width: none;
+        }
+        #conversation-container::-webkit-scrollbar { display: none; }
+
+        .message {
+            max-width: 75%; padding: 1rem 1.5rem;
+            border-radius: 18px; font-size: 1rem; line-height: 1.6;
+            opacity: 0; transform: translateY(20px);
+            animation: message-fade-in 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            word-wrap: break-word;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        @keyframes message-fade-in { to { opacity: 1; transform: translateY(0); } }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: rgba(0, 170, 255, 0.2);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            border-bottom-right-radius: 6px;
+        }
+        .ai-message {
+            align-self: flex-start;
+            background-color: rgba(40, 50, 70, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom-left-radius: 6px;
+        }
+
+        /* --- ENHANCED Central Orb & Control Area --- */
+        #control-area {
+            height: 320px; width: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            position: relative;
+        }
+
+        #falcon-orb {
+            width: 130px; height: 130px;
+            border-radius: 50%; cursor: pointer; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .orb-core {
+            width: 100%; height: 100%; border-radius: 50%;
+            background: radial-gradient(circle, #0a1020 40%, var(--primary-glow) 110%);
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.6), 0 0 15px var(--primary-glow);
+            transition: all 0.5s ease-in-out;
+        }
+
+        .orb-ring {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 140%; height: 140%;
+            border-radius: 50%;
+            border: 2px solid var(--primary-glow);
+            opacity: 0.5;
+            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out, opacity 0.3s ease-out;
+        }
+
+        /* Orb States */
+        #falcon-orb.disabled .orb-core { 
+            background: radial-gradient(circle, #0a1020 40%, #444 110%);
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 0 5px #666;
+        }
+
+        #falcon-orb.idle .orb-core { animation: orb-breath 6s infinite ease-in-out; }
+        @keyframes orb-breath {
+            0%, 100% { transform: scale(1); box-shadow: inset 0 0 25px rgba(0,0,0,0.6), 0 0 20px var(--primary-glow); }
+            50% { transform: scale(1.04); box-shadow: inset 0 0 30px rgba(0,0,0,0.4), 0 0 30px var(--primary-glow); }
+        }
+
+        #falcon-orb.listening .orb-core { 
+            background: radial-gradient(circle, #0a1020 30%, var(--secondary-glow) 110%); 
+            animation: listening-glow-breath 2s infinite ease-in-out; 
+        }
+        #falcon-orb.listening .orb-ring {
+            animation: listen-scan 2s infinite linear;
+            border-color: var(--secondary-glow);
+            opacity: 1;
+        }
+        @keyframes listening-glow-breath {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: inset 0 0 25px rgba(170,0,255,0.6), 0 0 25px var(--secondary-glow); 
+            }
+            50% { 
+                transform: scale(1.08); 
+                box-shadow: inset 0 0 35px rgba(170,0,255,0.4), 0 0 40px var(--secondary-glow); 
+            }
+        }
+        @keyframes listen-scan {
+            from { transform: translate(-50%, -50%) rotate(0deg); } 
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        #falcon-orb.processing .orb-core { animation: process-spin 1s infinite cubic-bezier(0.5, 0, 0.5, 1); }
+        @keyframes process-spin {
+            0% { transform: rotateY(0deg) scale(1.0); } 
+            50% { transform: rotateY(180deg) scale(0.9); } 
+            100% { transform: rotateY(360deg) scale(1.0); }
+        }
+
+        #falcon-orb.speaking .orb-core { animation: speak-pulse 1.2s infinite ease-in-out; }
+        @keyframes speak-pulse {
+             0%, 100% { transform: scale(1.0); } 
+             50% { transform: scale(1.1); }
+        }
+
+        /* User Speaking Effect - Glowing grow effect */
+        #falcon-orb.user-speaking .orb-core {
+            animation: user-speaking-glow 1.5s infinite ease-in-out;
+            background: radial-gradient(circle, #0a1020 20%, var(--primary-glow) 120%);
+        }
+        #falcon-orb.user-speaking .orb-ring {
+            animation: user-speaking-ring 1.5s infinite ease-in-out;
+            border-color: var(--primary-glow);
+            opacity: 0.8;
+        }
+        @keyframes user-speaking-glow {
+            0%, 100% { 
+                transform: scale(1.0); 
+                box-shadow: inset 0 0 30px rgba(0,170,255,0.7), 0 0 30px var(--primary-glow); 
+            }
+            50% { 
+                transform: scale(1.15); 
+                box-shadow: inset 0 0 45px rgba(0,170,255,0.5), 0 0 50px var(--primary-glow); 
+            }
+        }
+        @keyframes user-speaking-ring {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1.2); 
+                box-shadow: 0 0 20px var(--primary-glow); 
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.4); 
+                box-shadow: 0 0 35px var(--primary-glow); 
+            }
+        }
+
+        /* Status Text Area */
+        #status-container {
+            margin-top: 2.5rem; text-align: center;
+        }
+        #status-text {
+            color: var(--text-primary); font-size: 1.1rem; letter-spacing: 1px;
+            font-weight: 500; transition: color 0.3s, opacity 0.3s;
+        }
+        #hint-text {
+            color: var(--text-secondary); font-size: 0.9rem;
+            min-height: 1.2rem;
+            transition: opacity 0.3s;
+        }
+
+        /* Error handling */
+        .error-message {
+            color: #ff6b6b;
+            background-color: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="conversation-container"></div>
+    
+    <div id="control-area">
+        <div id="falcon-orb" class="disabled">
+            <div class="orb-core"></div>
+            <div class="orb-ring"></div>
+        </div>
+        <div id="status-container">
+            <p id="status-text">System Offline</p>
+            <p id="hint-text">Click the orb to activate</p>
+        </div>
+    </div>
+
+    <script src="/eel.js"></script>
+    <script>
+        // --- DOM Elements ---
+        const conversationContainer = document.getElementById('conversation-container');
+        const falconOrb = document.getElementById('falcon-orb');
+        const orbRing = document.querySelector('.orb-ring');
+        const statusText = document.getElementById('status-text');
+        const hintText = document.getElementById('hint-text');
+
+        // --- State Management ---
+        const AIState = {
+            DISABLED: 'disabled',
+            IDLE: 'idle',
+            LISTENING: 'listening',
+            PROCESSING: 'processing',
+            SPEAKING: 'speaking',
+            USER_SPEAKING: 'user-speaking'
+        };
+        
+        let currentState = AIState.DISABLED;
+        let isSpeaking = false;
+        let listeningTimeout;
+        let recognitionActive = false;
+        const LISTENING_TIMEOUT = 8000; // 8 seconds
+
+        // --- Audio Context ---
+        let audioContext;
+        let analyser;
+        let microphone;
+        let animationId;
+
+        // --- Speech Recognition ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        // --- Utility Functions ---
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function updateUI(state, mainText, hint) {
+            console.log(`UI State change: ${currentState} -> ${state}`);
+            currentState = state;
+            
+            // Remove all state classes
+            falconOrb.className = '';
+            falconOrb.classList.add(state);
+            
+            statusText.textContent = mainText || '...';
+            hintText.textContent = hint || '';
+        }
+
+        function addMessageToUI(text, isUser, isError = false) {
+            if (!text || !text.trim()) return;
+            
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            
+            if (isError) {
+                messageElement.classList.add('error-message');
+            } else {
+                messageElement.classList.add(isUser ? 'user-message' : 'ai-message');
+            }
+            
+            messageElement.textContent = text.trim();
+            conversationContainer.appendChild(messageElement);
+            
+            // Smooth scroll to bottom
+            setTimeout(() => {
+                conversationContainer.scrollTo({ 
+                    top: conversationContainer.scrollHeight, 
+                    behavior: 'smooth' 
+                });
+            }, 100);
+        }
+
+        // --- Speech Recognition Setup ---
+        function initializeSpeechRecognition() {
+            if (!SpeechRecognition) {
+                console.error('Speech Recognition not supported');
+                return false;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-IN';
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => {
+                console.log('Speech recognition started');
+                recognitionActive = true;
+            };
+
+            recognition.onresult = debounce((event) => {
+                if (isSpeaking) {
+                    console.log('Interrupting TTS due to user speech');
+                    eel.stop_tts();
+                    isSpeaking = false;
+                }
+
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                // Show user speaking state when there's interim results
+                if (interimTranscript && currentState === AIState.IDLE) {
+                    updateUI(AIState.USER_SPEAKING, "Listening...", "Speak clearly");
+                }
+
+                if (finalTranscript) {
+                    console.log("Final transcript:", finalTranscript);
+                    handleVoiceCommand(finalTranscript.trim());
+                }
+            }, 300);
+            
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                recognitionActive = false;
+                
+                if (event.error === 'not-allowed') {
+                    updateUI(AIState.DISABLED, "Microphone Denied", "Please grant permission and refresh");
+                } else if (event.error === 'no-speech') {
+                    // Return to idle state after no speech
+                    if (currentState === AIState.USER_SPEAKING || currentState === AIState.LISTENING) {
+                        updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+                    }
+                    restartRecognition();
+                } else {
+                    console.log('Recognition error, attempting restart...');
+                    setTimeout(restartRecognition, 1000);
+                }
+            };
+
+            recognition.onend = () => {
+                console.log('Speech recognition ended');
+                recognitionActive = false;
+                
+                // Auto-restart if we're not disabled
+                if (currentState !== AIState.DISABLED) {
+                    setTimeout(restartRecognition, 500);
+                }
+            };
+
+            return true;
+        }
+
+        function restartRecognition() {
+            if (currentState === AIState.DISABLED || recognitionActive) {
+                return;
+            }
+
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error('Failed to restart recognition:', e);
+                setTimeout(restartRecognition, 2000);
+            }
+        }
+
+        function handleVoiceCommand(transcript) {
+            const lowerTranscript = transcript.toLowerCase().trim();
+            
+            // Process any speech directly without wake word
+            if (lowerTranscript.length > 1) {
+                clearTimeout(listeningTimeout);
+                processQuery(lowerTranscript);
+            } else {
+                updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+            }
+        }
+
+        async function processQuery(query) {
+            if (!query || query.trim().length < 2) {
+                updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+                return;
+            }
+            
+            updateUI(AIState.PROCESSING, "Processing...", "");
+            addMessageToUI(query, true);
+            
+            try {
+                const result = await eel.process_user_query(query)();
+                
+                if (result && result.response) {
+                    addMessageToUI(result.response, false);
+                    
+                    if (result.should_speak) {
+                        const ttsSuccess = await eel.request_tts(result.response)();
+                        if (!ttsSuccess) {
+                            updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+                        }
+                    } else {
+                        updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+                    }
+                } else {
+                    addMessageToUI("I couldn't process that request.", false, true);
+                    updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+                }
+            } catch (error) {
+                console.error("Error processing query:", error);
+                addMessageToUI("A communication error occurred. Please try again.", false, true);
+                updateUI(AIState.IDLE, "Connection Error", "Click orb to retry");
+            }
+        }
+
+        // --- Audio Visualizer with User Speaking Detection ---
+        async function setupAudioVisualizer() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
+                
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.8;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                
+                microphone.connect(analyser);
+
+                let userSpeakingThreshold = 30; // Threshold for detecting user speech
+                let silenceCounter = 0;
+                const silenceLimit = 30; // Frames of silence before returning to idle
+
+                function animate() {
+                    if (currentState === AIState.DISABLED) {
+                        cancelAnimationFrame(animationId);
+                        return;
+                    }
+
+                    animationId = requestAnimationFrame(animate);
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    // Calculate average amplitude
+                    const sum = dataArray.reduce((a, b) => a + b, 0);
+                    const average = sum / bufferLength;
+                    
+                    // Detect user speaking based on audio level
+                    if (average > userSpeakingThreshold && currentState === AIState.IDLE) {
+                        silenceCounter = 0;
+                        // Don't change to user-speaking here, let speech recognition handle it
+                    } else if (average <= userSpeakingThreshold && currentState === AIState.USER_SPEAKING) {
+                        silenceCounter++;
+                        if (silenceCounter > silenceLimit) {
+                            updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+                            silenceCounter = 0;
+                        }
+                    } else {
+                        silenceCounter = 0;
+                    }
+                    
+                    // Scale visualizer based on audio
+                    const scale = 1 + (average / 255) * 0.5;
+                    const opacity = 0.3 + (average / 255) * 0.7;
+                    const glowSize = Math.max(10, average / 4);
+
+                    orbRing.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                    orbRing.style.opacity = opacity;
+                    orbRing.style.boxShadow = `0 0 ${glowSize}px ${glowSize/2}px var(--primary-glow)`;
+                }
+                
+                animate();
+                return true;
+            } catch (err) {
+                console.error("Audio setup error:", err);
+                return false;
+            }
+        }
+
+        // --- Event Listeners ---
+        falconOrb.addEventListener('click', async () => {
+            if (currentState === AIState.DISABLED) {
+                console.log('Activating FALCON...');
+                
+                if (!initializeSpeechRecognition()) {
+                    updateUI(AIState.DISABLED, "Browser Unsupported", "Please use Chrome or Edge");
+                    return;
+                }
+
+                const audioSuccess = await setupAudioVisualizer();
+                if (!audioSuccess) {
+                    updateUI(AIState.DISABLED, "Microphone Error", "Please grant access and refresh");
+                    return;
+                }
+
+                try {
+                    recognition.start();
+                    updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+                } catch (e) {
+                    console.error("Could not start recognition:", e);
+                    updateUI(AIState.DISABLED, "Activation Failed", "Please check permissions");
+                }
+            }
+        });
+
+        // --- EEL Functions ---
+        eel.expose(notify_tts_status, 'notify_tts_status');
+        function notify_tts_status(status) {
+            console.log('TTS Status:', status);
+            isSpeaking = (status === 'speaking');
+            
+            if (isSpeaking) {
+                updateUI(AIState.SPEAKING, "Speaking...", "");
+            } else {
+                if (currentState === AIState.SPEAKING) {
+                    updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+                }
+            }
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('FALCON Interface loaded');
+            
+            // Check if we can access microphone
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                updateUI(AIState.DISABLED, "Browser Unsupported", "Modern browser required");
+                return;
+            }
+
+            // Initial system check
+            eel.get_system_status()().then(status => {
+                console.log('System status:', status);
+                if (!status.assistant_ready) {
+                    updateUI(AIState.DISABLED, "System Error", "Please restart application");
+                }
+            }).catch(err => {
+                console.error('Failed to get system status:', err);
+            });
+        });
+
+        // --- Cleanup on page unload ---
+        window.addEventListener('beforeunload', () => {
+            if (recognition && recognitionActive) {
+                recognition.stop();
+            }
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close();
+            }
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        });
+
+        // --- Error Recovery ---
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            if (currentState !== AIState.DISABLED) {
+                addMessageToUI("System error detected. Please refresh if issues persist.", false, true);
+            }
+        });
+
+        // --- Keyboard Shortcuts ---
+        document.addEventListener('keydown', (event) => {
+            // Space bar to activate/stop
+            if (event.code === 'Space' && event.target === document.body) {
+                event.preventDefault();
+                
+                if (currentState === AIState.DISABLED) {
+                    falconOrb.click();
+                } else if (currentState === AIState.SPEAKING) {
+                    eel.stop_tts();
+                }
+            }
+            
+            // Escape to return to idle
+            if (event.code === 'Escape') {
+                if (currentState === AIState.LISTENING || currentState === AIState.USER_SPEAKING) {
+                    clearTimeout(listeningTimeout);
+                    updateUI(AIState.IDLE, "Ready to Listen", "Just start speaking");
+                }
+            }
+        });
+    </script>
+</body>
+</html>
